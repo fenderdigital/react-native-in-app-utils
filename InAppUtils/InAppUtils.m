@@ -50,7 +50,8 @@ RCT_EXPORT_MODULE()
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
                 break;
             }
-            case SKPaymentTransactionStatePurchased: {
+            case SKPaymentTransactionStatePurchased:
+            case SKPaymentTransactionStateRestored: {
                 NSString *key = RCTKeyForInstance(transaction.payment.productIdentifier);
                 RCTResponseSenderBlock callback = _callbacks[key];
                 if (callback) {
@@ -68,9 +69,6 @@ RCT_EXPORT_MODULE()
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
                 break;
             }
-            case SKPaymentTransactionStateRestored:
-                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-                break;
             case SKPaymentTransactionStatePurchasing:
                 NSLog(@"purchasing");
                 break;
