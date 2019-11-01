@@ -233,7 +233,20 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
     if (callback) {
         products = [NSMutableArray arrayWithArray:response.products];
         NSMutableArray *productsArrayForJS = [NSMutableArray array];
+        
         for(SKProduct *item in response.products) {
+            NSMutableArray *discountsArrayForJS = [NSMutableArray array];
+
+            if (@available(iOS 12.2, *)) {
+                NSArray *discounts = [[NSArray alloc] initWithArray:item.discounts];
+                for (SKProductDiscount *discountItem in discounts) {
+                    NSDictionary *discount = @{
+                        @"identifier": discountItem.identifier,
+                        @"price": discountItem.price
+                    };
+                    [discountsArrayForJS addObject:discount];
+                }
+            }
             NSDictionary *product = @{
                                       @"identifier": item.productIdentifier,
                                       @"price": item.price,
@@ -243,6 +256,7 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
                                       @"countryCode": [item.priceLocale objectForKey: NSLocaleCountryCode],
                                       @"description": item.localizedDescription ? item.localizedDescription : @"",
                                       @"title": item.localizedTitle ? item.localizedTitle : @"",
+                                      @"discounts": discountsArrayForJS ? discountsArrayForJS : @[],
                                       };
             [productsArrayForJS addObject:product];
         }
