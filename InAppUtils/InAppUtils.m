@@ -93,12 +93,16 @@ RCT_EXPORT_METHOD(purchaseProductForUser:(NSString *)productIdentifier
 }
 
 RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
+                  discountIdentifier:(NSString *)discountidentifier
+                  discountSignature:(NSDictionary*)discountSignature
                   callback:(RCTResponseSenderBlock)callback)
 {
-    [self doPurchaseProduct:productIdentifier username:nil callback:callback];
+    [self doPurchaseProduct:productIdentifier discountIdentifier: discountidentifier discountSignature: discountSignature username:nil callback:callback];
 }
 
 - (void) doPurchaseProduct:(NSString *)productIdentifier
+        discountIdentifier:(NSString *)discountidentifier
+         discountSignature:(NSDictionary *)discountSignature
                   username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback
 {
@@ -116,6 +120,23 @@ RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
         if(username) {
             payment.applicationUsername = username;
         }
+        if (discountSignature && discountidentifier) {
+            NSString *keyId = [discountSignature valueForKey:@"keyID"];
+            NSUUID *nonce = [[NSUUID alloc] initWithUUIDString:[discountSignature valueForKey:@"nonce"]];
+            NSString *signature = [discountSignature valueForKey:@"signature"];
+            NSNumber *timestamp = [discountSignature valueForKey:@"timestamp"];
+            
+            if (@available(iOS 12.2, *)) {
+                SKPaymentDiscount *discount = [[SKPaymentDiscount alloc] initWithIdentifier:discountidentifier
+                                                                              keyIdentifier:keyId
+                                                                                      nonce:nonce
+                                                                                  signature:signature
+                                                                                  timestamp:timestamp];
+                NSLog(@"applying %@ discount to purchase", discountidentifier);
+                payment.paymentDiscount = discount;
+            }
+        }
+        
         [[SKPaymentQueue defaultQueue] addPayment:payment];
         _callbacks[RCTKeyForInstance(payment.productIdentifier)] = callback;
     } else {
