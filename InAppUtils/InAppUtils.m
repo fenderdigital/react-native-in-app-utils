@@ -89,7 +89,7 @@ RCT_EXPORT_METHOD(purchaseProductForUser:(NSString *)productIdentifier
                   username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback)
 {
-    [self doPurchaseProduct:productIdentifier username:username callback:callback];
+    [self doPurchaseProduct:productIdentifier discountIdentifier: nil discountSignature: nil username:username callback:callback];
 }
 
 RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
