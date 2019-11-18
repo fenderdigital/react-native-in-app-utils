@@ -92,16 +92,23 @@ RCT_EXPORT_METHOD(purchaseProductForUser:(NSString *)productIdentifier
     [self doPurchaseProduct:productIdentifier discountIdentifier: nil discountSignature: nil username:username callback:callback];
 }
 
-RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
-                  discountIdentifier:(NSString *)discountidentifier
+RCT_EXPORT_METHOD(purchaseDiscountProductForUser:(NSString *)productIdentifier
+                  discountIdentifier:(NSString *)discountIdentifier
                   discountSignature:(NSDictionary*)discountSignature
+                  username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback)
 {
-    [self doPurchaseProduct:productIdentifier discountIdentifier: discountidentifier discountSignature: discountSignature username:nil callback:callback];
+    [self doPurchaseProduct:productIdentifier discountIdentifier: discountIdentifier discountSignature: discountSignature username:username callback:callback];
+}
+
+RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
+                  callback:(RCTResponseSenderBlock)callback)
+{
+    [self doPurchaseProduct:productIdentifier discountIdentifier: nil discountSignature: nil username:nil callback:callback];
 }
 
 - (void) doPurchaseProduct:(NSString *)productIdentifier
-        discountIdentifier:(NSString *)discountidentifier
+        discountIdentifier:(NSString *)discountIdentifier
          discountSignature:(NSDictionary *)discountSignature
                   username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback
@@ -120,21 +127,25 @@ RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
         if(username) {
             payment.applicationUsername = username;
         }
-        if (discountSignature && discountidentifier) {
+
+        if (discountSignature && discountIdentifier && username) {
             NSString *keyId = [discountSignature valueForKey:@"keyID"];
             NSUUID *nonce = [[NSUUID alloc] initWithUUIDString:[discountSignature valueForKey:@"nonce"]];
             NSString *signature = [discountSignature valueForKey:@"signature"];
             NSNumber *timestamp = [discountSignature valueForKey:@"timestamp"];
             
             if (@available(iOS 12.2, *)) {
-                SKPaymentDiscount *discount = [[SKPaymentDiscount alloc] initWithIdentifier:discountidentifier
+                SKPaymentDiscount *discount = [[SKPaymentDiscount alloc] initWithIdentifier:discountIdentifier
                                                                               keyIdentifier:keyId
                                                                                       nonce:nonce
                                                                                   signature:signature
                                                                                   timestamp:timestamp];
-                NSLog(@"applying %@ discount to purchase", discountidentifier);
+                NSLog(@"applying: %@ discount to purchase for username: %@", discountIdentifier, username);
                 payment.paymentDiscount = discount;
             }
+        }
+        else if (discountSignature && discountIdentifier && !username) {
+            NSLog(@"Cannot complete subscription offer without username matching username used in signature");
         }
         
         [[SKPaymentQueue defaultQueue] addPayment:payment];
