@@ -128,7 +128,11 @@ RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
             payment.applicationUsername = username;
         }
 
-        if (discountSignature && discountIdentifier && username) {
+        if (discountSignature && discountIdentifier) {
+            if (!username) {
+                callback(@[@"invalid_applicationUsername"]);
+                return;
+            }
             NSString *keyId = [discountSignature valueForKey:@"keyID"];
             NSUUID *nonce = [[NSUUID alloc] initWithUUIDString:[discountSignature valueForKey:@"nonce"]];
             NSString *signature = [discountSignature valueForKey:@"signature"];
@@ -144,10 +148,6 @@ RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
                 payment.paymentDiscount = discount;
             }
         }
-        else if (discountSignature && discountIdentifier && !username) {
-            NSLog(@"Cannot complete subscription offer without username matching username used in signature");
-        }
-        
         [[SKPaymentQueue defaultQueue] addPayment:payment];
         _callbacks[RCTKeyForInstance(payment.productIdentifier)] = callback;
     } else {
