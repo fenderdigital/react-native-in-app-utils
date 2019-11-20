@@ -89,16 +89,27 @@ RCT_EXPORT_METHOD(purchaseProductForUser:(NSString *)productIdentifier
                   username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback)
 {
-    [self doPurchaseProduct:productIdentifier username:username callback:callback];
+    [self doPurchaseProduct:productIdentifier discountIdentifier: nil discountSignature: nil username:username callback:callback];
+}
+
+RCT_EXPORT_METHOD(purchaseDiscountProductForUser:(NSString *)productIdentifier
+                  discountIdentifier:(NSString *)discountIdentifier
+                  discountSignature:(NSDictionary*)discountSignature
+                  username:(NSString *)username
+                  callback:(RCTResponseSenderBlock)callback)
+{
+    [self doPurchaseProduct:productIdentifier discountIdentifier: discountIdentifier discountSignature: discountSignature username:username callback:callback];
 }
 
 RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
                   callback:(RCTResponseSenderBlock)callback)
 {
-    [self doPurchaseProduct:productIdentifier username:nil callback:callback];
+    [self doPurchaseProduct:productIdentifier discountIdentifier: nil discountSignature: nil username:nil callback:callback];
 }
 
 - (void) doPurchaseProduct:(NSString *)productIdentifier
+        discountIdentifier:(NSString *)discountIdentifier
+         discountSignature:(NSDictionary *)discountSignature
                   username:(NSString *)username
                   callback:(RCTResponseSenderBlock)callback
 {
@@ -115,6 +126,27 @@ RCT_EXPORT_METHOD(purchaseProduct:(NSString *)productIdentifier
         SKMutablePayment *payment = [SKMutablePayment paymentWithProduct:product];
         if(username) {
             payment.applicationUsername = username;
+        }
+
+        if (discountSignature && discountIdentifier) {
+            if (!username) {
+                callback(@[@"invalid_applicationUsername"]);
+                return;
+            }
+            NSString *keyId = [discountSignature valueForKey:@"keyID"];
+            NSUUID *nonce = [[NSUUID alloc] initWithUUIDString:[discountSignature valueForKey:@"nonce"]];
+            NSString *signature = [discountSignature valueForKey:@"signature"];
+            NSNumber *timestamp = [discountSignature valueForKey:@"timestamp"];
+            
+            if (@available(iOS 12.2, *)) {
+                SKPaymentDiscount *discount = [[SKPaymentDiscount alloc] initWithIdentifier:discountIdentifier
+                                                                              keyIdentifier:keyId
+                                                                                      nonce:nonce
+                                                                                  signature:signature
+                                                                                  timestamp:timestamp];
+                NSLog(@"applying: %@ discount to purchase for username: %@", discountIdentifier, username);
+                payment.paymentDiscount = discount;
+            }
         }
         [[SKPaymentQueue defaultQueue] addPayment:payment];
         _callbacks[RCTKeyForInstance(payment.productIdentifier)] = callback;
@@ -233,7 +265,20 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
     if (callback) {
         products = [NSMutableArray arrayWithArray:response.products];
         NSMutableArray *productsArrayForJS = [NSMutableArray array];
+        
         for(SKProduct *item in response.products) {
+            NSMutableArray *discountsArrayForJS = [NSMutableArray array];
+
+            if (@available(iOS 12.2, *)) {
+                NSArray *discounts = [[NSArray alloc] initWithArray:item.discounts];
+                for (SKProductDiscount *discountItem in discounts) {
+                    NSDictionary *discount = @{
+                        @"identifier": discountItem.identifier,
+                        @"price": discountItem.price
+                    };
+                    [discountsArrayForJS addObject:discount];
+                }
+            }
             NSDictionary *product = @{
                                       @"identifier": item.productIdentifier,
                                       @"price": item.price,
@@ -243,6 +288,7 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
                                       @"countryCode": [item.priceLocale objectForKey: NSLocaleCountryCode],
                                       @"description": item.localizedDescription ? item.localizedDescription : @"",
                                       @"title": item.localizedTitle ? item.localizedTitle : @"",
+                                      @"discounts": discountsArrayForJS ? discountsArrayForJS : @[],
                                       };
             [productsArrayForJS addObject:product];
         }
