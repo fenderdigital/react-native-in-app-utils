@@ -279,17 +279,49 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
                     [discountsArrayForJS addObject:discount];
                 }
             }
+            NSString *introPeriodUnitStr = @"";
+            NSNumber *numOfIntroPeriods = @(0);
+            NSDecimalNumber *introPeriodPrice = [NSDecimalNumber zero];
+
+            if (@available(iOS 11.2, *)) {
+                SKProductDiscount *introDiscount = item.introductoryPrice;
+                introPeriodPrice = introDiscount.price;
+                numOfIntroPeriods = @(introDiscount.numberOfPeriods);
+                SKProductPeriodUnit introPeriodUnit = introDiscount.subscriptionPeriod.unit;
+                 
+                switch (introPeriodUnit) {
+                    case SKProductPeriodUnitDay:
+                        introPeriodUnitStr = @"day";
+                        break;
+                        case SKProductPeriodUnitWeek:
+                        introPeriodUnitStr = @"week";
+                        break;
+                        case SKProductPeriodUnitMonth:
+                        introPeriodUnitStr = @"month";
+                        break;
+                        case SKProductPeriodUnitYear:
+                        introPeriodUnitStr = @"year";
+                        break;
+                    default:
+                        break;
+                }
+                 
+            }
+            
             NSDictionary *product = @{
-                                      @"identifier": item.productIdentifier,
-                                      @"price": item.price,
-                                      @"currencySymbol": [item.priceLocale objectForKey:NSLocaleCurrencySymbol],
-                                      @"currencyCode": [item.priceLocale objectForKey:NSLocaleCurrencyCode],
-                                      @"priceString": item.priceString,
-                                      @"countryCode": [item.priceLocale objectForKey: NSLocaleCountryCode],
-                                      @"description": item.localizedDescription ? item.localizedDescription : @"",
-                                      @"title": item.localizedTitle ? item.localizedTitle : @"",
-                                      @"discounts": discountsArrayForJS ? discountsArrayForJS : @[],
-                                      };
+                                    @"identifier": item.productIdentifier,
+                                    @"price": item.price,
+                                    @"currencySymbol": [item.priceLocale objectForKey:NSLocaleCurrencySymbol],
+                                    @"currencyCode": [item.priceLocale objectForKey:NSLocaleCurrencyCode],
+                                    @"priceString": item.priceString,
+                                    @"countryCode": [item.priceLocale objectForKey: NSLocaleCountryCode],
+                                    @"description": item.localizedDescription ? item.localizedDescription : @"",
+                                    @"title": item.localizedTitle ? item.localizedTitle : @"",
+                                    @"discounts": discountsArrayForJS ? discountsArrayForJS : @[],
+                                    @"introductoryPrice": introPeriodPrice,
+                                    @"introductoryPeriodUnit": introPeriodUnitStr,
+                                    @"numOfIntroPeriods": numOfIntroPeriods,
+                                    };
             [productsArrayForJS addObject:product];
         }
         callback(@[[NSNull null], productsArrayForJS]);
