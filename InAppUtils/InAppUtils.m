@@ -285,27 +285,28 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
 
             if (@available(iOS 11.2, *)) {
                 SKProductDiscount *introDiscount = item.introductoryPrice;
-                introPeriodPrice = introDiscount.price;
-                numOfIntroPeriods = @(introDiscount.numberOfPeriods);
-                SKProductPeriodUnit introPeriodUnit = introDiscount.subscriptionPeriod.unit;
-                 
-                switch (introPeriodUnit) {
-                    case SKProductPeriodUnitDay:
-                        introPeriodUnitStr = @"day";
-                        break;
-                        case SKProductPeriodUnitWeek:
-                        introPeriodUnitStr = @"week";
-                        break;
-                        case SKProductPeriodUnitMonth:
-                        introPeriodUnitStr = @"month";
-                        break;
-                        case SKProductPeriodUnitYear:
-                        introPeriodUnitStr = @"year";
-                        break;
-                    default:
-                        break;
+                if (introDiscount) {
+                    introPeriodPrice = introDiscount.price;
+                    numOfIntroPeriods = @(introDiscount.numberOfPeriods);
+                    SKProductPeriodUnit introPeriodUnit = introDiscount.subscriptionPeriod.unit;
+                     
+                    switch (introPeriodUnit) {
+                        case SKProductPeriodUnitDay:
+                            introPeriodUnitStr = @"day";
+                            break;
+                            case SKProductPeriodUnitWeek:
+                            introPeriodUnitStr = @"week";
+                            break;
+                            case SKProductPeriodUnitMonth:
+                            introPeriodUnitStr = @"month";
+                            break;
+                            case SKProductPeriodUnitYear:
+                            introPeriodUnitStr = @"year";
+                            break;
+                        default:
+                            break;
+                    }
                 }
-                 
             }
             
             NSDictionary *product = @{
