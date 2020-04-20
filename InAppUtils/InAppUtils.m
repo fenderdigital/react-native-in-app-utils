@@ -287,8 +287,9 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
                 SKProductDiscount *introDiscount = item.introductoryPrice;
                 if (introDiscount) {
                     introPeriodPrice = introDiscount.price;
-                    numOfIntroPeriods = @(introDiscount.numberOfPeriods);
-                    SKProductPeriodUnit introPeriodUnit = introDiscount.subscriptionPeriod.unit;
+                    SKProductSubscriptionPeriod *subscriptionPeriod = introDiscount.subscriptionPeriod;
+                    numOfIntroPeriods = @(subscriptionPeriod.numberOfUnits);
+                    SKProductPeriodUnit introPeriodUnit = subscriptionPeriod.unit;
                      
                     switch (introPeriodUnit) {
                         case SKProductPeriodUnitDay:
